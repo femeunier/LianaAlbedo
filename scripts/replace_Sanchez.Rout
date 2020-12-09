@@ -1,746 +1,0 @@
-
-R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
-Copyright (C) 2018 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under certain conditions.
-Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
-
-R is a collaborative project with many contributors.
-Type 'contributors()' for more information and
-'citation()' on how to cite R or R packages in publications.
-
-Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for an HTML browser interface to help.
-Type 'q()' to quit R.
-
-> rm(list = ls())
-> 
-> library(dplyr)
-
-Attaching package: ‘dplyr’
-
-The following objects are masked from ‘package:stats’:
-
-    filter, lag
-
-The following objects are masked from ‘package:base’:
-
-    intersect, setdiff, setequal, union
-
-> library(ggplot2)
-> library(pracma)
-> 
-> data.all <- readRDS(file = "./Sanchez_allfits2.RDS")
-> 
-> GFs <- names(data.all)
-> 
-> ####################################################################################
-> # Functions
-> run_prospect <- function(params,waves){
-+   # PROSPECT parameters
-+   Nlayers <- params[1]
-+   Cab <- params[2]
-+   Car <- params[3]
-+   Cw <- params[4]
-+   Cm <- params[5]
-+   
-+   optical_param <- c(Nlayers,Cab,Car,Cw,Cm)
-+   names(optical_param) <- c('Nlayers','chlab','carotenoids','Cw','Cm')
-+   
-+   # Call RTM
-+   result <- tryCatch(
-+     PEcAnRTM::prospect(optical_param, version = "5"),
-+     error = function(e) NULL)
-+   if (is.null(result)) return(-1e20)
-+   reflectance <- result[,"reflectance"]
-+   if (any(!is.finite(reflectance))) return(-1e20)
-+   if (any(reflectance < 0)) return(-1e20)
-+   if (any(reflectance > 1)) return(-1e20)
-+   
-+   reflectance_waves <- interp1(x = PEcAnRTM::wavelengths(reflectance),
-+                                y = as.vector(matrix(reflectance)),
-+                                waves)
-+   return(reflectance_waves)
-+ }
-> 
-> 
-> # test optimization
-> create_likelihood <- function(observed, waves) {
-+   function(params) {
-+     
-+     ssigma <- params[6]
-+     reflectance_waves <- run_prospect(params,waves)
-+     # Calculate likelihood
-+     ll <- sum(dnorm(reflectance_waves, observed, ssigma, log = TRUE))
-+     return(ll)
-+   }
-+ }
-> 
-> ################################################################################
-> df_formatted <- data.frame()
-> compt <- 1
-> for (pft in seq(names(data.all))){
-+   for (species in seq(names(data.all[[pft]]))){
-+     for (ind in seq(length(data.all[[pft]][[species]]))) {
-+       
-+       print(compt)
-+       data.temp <- data.all[[pft]][[species]][[ind]]
-+       
-+       if (!is.null(data.temp)){
-+         df_formatted <- rbind(df_formatted,data.temp[["posterior"]] %>% mutate(pft = GFs[pft],species = species,ind = ind,site = data.temp[["site"]]))
-+         compt <- 1 + compt
-+       }
-+     }
-+   }
-+ }
-[1] 1
-[1] 2
-[1] 3
-[1] 4
-[1] 5
-[1] 6
-[1] 7
-[1] 8
-[1] 9
-[1] 10
-[1] 11
-[1] 12
-[1] 13
-[1] 14
-[1] 15
-[1] 16
-[1] 17
-[1] 18
-[1] 19
-[1] 20
-[1] 21
-[1] 22
-[1] 23
-[1] 24
-[1] 25
-[1] 26
-[1] 27
-[1] 28
-[1] 29
-[1] 30
-[1] 31
-[1] 32
-[1] 33
-[1] 34
-[1] 35
-[1] 36
-[1] 37
-[1] 38
-[1] 39
-[1] 40
-[1] 41
-[1] 42
-[1] 43
-[1] 44
-[1] 45
-[1] 46
-[1] 47
-[1] 48
-[1] 49
-[1] 50
-[1] 51
-[1] 52
-[1] 53
-[1] 54
-[1] 55
-[1] 56
-[1] 57
-[1] 58
-[1] 59
-[1] 60
-[1] 61
-[1] 62
-[1] 63
-[1] 64
-[1] 65
-[1] 66
-[1] 67
-[1] 68
-[1] 69
-[1] 70
-[1] 71
-[1] 72
-[1] 73
-[1] 74
-[1] 75
-[1] 76
-[1] 77
-[1] 78
-[1] 79
-[1] 80
-[1] 81
-[1] 82
-[1] 83
-[1] 84
-[1] 85
-[1] 86
-[1] 87
-[1] 88
-[1] 89
-[1] 90
-[1] 91
-[1] 92
-[1] 93
-[1] 94
-[1] 95
-[1] 96
-[1] 97
-[1] 98
-[1] 99
-[1] 100
-[1] 101
-[1] 102
-[1] 103
-[1] 104
-[1] 105
-[1] 106
-[1] 107
-[1] 108
-[1] 109
-[1] 110
-[1] 111
-[1] 112
-[1] 113
-[1] 114
-[1] 115
-[1] 116
-[1] 117
-[1] 118
-[1] 119
-[1] 120
-[1] 121
-[1] 122
-[1] 123
-[1] 124
-[1] 125
-[1] 126
-[1] 127
-[1] 128
-[1] 129
-[1] 130
-[1] 131
-[1] 132
-[1] 133
-[1] 134
-[1] 135
-[1] 136
-[1] 137
-[1] 138
-[1] 139
-[1] 140
-[1] 141
-[1] 142
-[1] 143
-[1] 144
-[1] 145
-[1] 146
-[1] 147
-[1] 148
-[1] 149
-[1] 150
-[1] 151
-[1] 152
-[1] 153
-[1] 154
-[1] 155
-[1] 156
-[1] 157
-[1] 158
-[1] 159
-[1] 160
-[1] 161
-[1] 162
-[1] 163
-[1] 164
-[1] 165
-[1] 166
-[1] 167
-[1] 168
-[1] 169
-[1] 170
-[1] 171
-[1] 172
-[1] 173
-[1] 174
-[1] 175
-[1] 176
-[1] 177
-[1] 178
-[1] 179
-[1] 180
-[1] 181
-[1] 182
-[1] 183
-[1] 184
-[1] 185
-[1] 186
-[1] 187
-[1] 188
-[1] 189
-[1] 190
-[1] 191
-[1] 192
-[1] 193
-[1] 194
-[1] 195
-[1] 196
-[1] 197
-[1] 198
-[1] 199
-[1] 200
-[1] 201
-[1] 202
-[1] 203
-[1] 204
-[1] 205
-[1] 206
-[1] 207
-[1] 208
-[1] 209
-[1] 209
-[1] 209
-[1] 210
-[1] 211
-[1] 212
-[1] 213
-[1] 214
-[1] 215
-[1] 216
-[1] 217
-[1] 218
-[1] 219
-[1] 220
-[1] 221
-[1] 222
-[1] 223
-[1] 224
-[1] 225
-[1] 226
-[1] 227
-[1] 228
-[1] 229
-[1] 230
-[1] 231
-[1] 232
-[1] 233
-[1] 234
-[1] 235
-[1] 236
-[1] 237
-[1] 238
-[1] 239
-[1] 240
-[1] 241
-[1] 242
-[1] 243
-[1] 244
-[1] 245
-[1] 246
-[1] 247
-[1] 248
-[1] 249
-[1] 250
-[1] 251
-[1] 252
-[1] 253
-[1] 254
-[1] 255
-[1] 256
-[1] 257
-[1] 258
-[1] 259
-[1] 260
-[1] 261
-[1] 262
-[1] 263
-[1] 264
-[1] 265
-[1] 266
-[1] 267
-[1] 268
-[1] 269
-[1] 270
-[1] 271
-[1] 272
-[1] 273
-[1] 274
-[1] 275
-[1] 276
-[1] 277
-[1] 278
-[1] 279
-[1] 280
-[1] 281
-[1] 282
-[1] 283
-[1] 284
-[1] 285
-[1] 286
-[1] 287
-[1] 288
-[1] 289
-[1] 290
-[1] 291
-[1] 292
-[1] 293
-[1] 294
-[1] 295
-[1] 296
-[1] 297
-[1] 298
-[1] 299
-[1] 300
-[1] 301
-[1] 302
-[1] 303
-[1] 304
-[1] 305
-[1] 306
-[1] 307
-[1] 308
-[1] 309
-[1] 310
-[1] 311
-[1] 312
-[1] 313
-[1] 314
-[1] 315
-[1] 316
-[1] 317
-[1] 318
-[1] 319
-[1] 320
-[1] 321
-[1] 322
-[1] 323
-[1] 324
-[1] 325
-[1] 326
-[1] 327
-[1] 328
-[1] 329
-[1] 330
-[1] 331
-[1] 332
-[1] 333
-[1] 334
-[1] 335
-[1] 336
-[1] 337
-[1] 338
-[1] 339
-[1] 340
-[1] 341
-[1] 342
-[1] 343
-[1] 344
-[1] 345
-[1] 346
-[1] 347
-[1] 348
-[1] 349
-[1] 350
-[1] 351
-[1] 352
-[1] 353
-[1] 354
-[1] 355
-[1] 356
-[1] 357
-[1] 358
-[1] 359
-[1] 360
-[1] 361
-[1] 362
-[1] 363
-[1] 364
-[1] 365
-[1] 366
-[1] 367
-[1] 368
-[1] 369
-[1] 370
-[1] 371
-[1] 372
-[1] 373
-[1] 374
-[1] 375
-[1] 376
-[1] 377
-[1] 378
-[1] 379
-[1] 380
-[1] 381
-[1] 382
-[1] 383
-[1] 384
-[1] 385
-[1] 386
-[1] 387
-[1] 388
-[1] 389
-[1] 390
-[1] 391
-[1] 392
-[1] 393
-[1] 394
-[1] 395
-[1] 396
-[1] 397
-[1] 398
-[1] 399
-[1] 400
-[1] 401
-[1] 402
-[1] 403
-[1] 404
-[1] 405
-[1] 406
-[1] 407
-[1] 408
-[1] 409
-[1] 410
-[1] 411
-[1] 412
-[1] 413
-[1] 414
-[1] 415
-[1] 416
-[1] 417
-[1] 418
-[1] 419
-[1] 420
-[1] 421
-[1] 422
-[1] 423
-[1] 424
-[1] 425
-[1] 426
-[1] 427
-[1] 428
-[1] 429
-[1] 430
-[1] 431
-[1] 432
-[1] 433
-[1] 434
-[1] 435
-[1] 436
-[1] 437
-[1] 438
-[1] 439
-[1] 440
-[1] 441
-[1] 442
-[1] 443
-[1] 444
-[1] 445
-[1] 446
-[1] 447
-[1] 448
-[1] 449
-[1] 450
-[1] 451
-[1] 452
-[1] 453
-[1] 454
-[1] 455
-[1] 456
-[1] 457
-[1] 458
-[1] 459
-[1] 460
-[1] 461
-[1] 462
-[1] 463
-[1] 464
-[1] 465
-[1] 466
-[1] 467
-[1] 468
-[1] 469
-[1] 470
-[1] 471
-[1] 472
-[1] 473
-[1] 474
-[1] 475
-[1] 476
-[1] 477
-[1] 478
-[1] 479
-[1] 480
-[1] 481
-[1] 482
-[1] 483
-[1] 484
-[1] 485
-[1] 486
-[1] 487
-[1] 488
-[1] 489
-[1] 490
-[1] 491
-[1] 492
-[1] 493
-[1] 494
-[1] 495
-[1] 496
-[1] 497
-[1] 498
-[1] 499
-[1] 500
-[1] 501
-[1] 502
-[1] 503
-[1] 504
-[1] 505
-[1] 506
-[1] 507
-[1] 508
-[1] 509
-[1] 510
-[1] 511
-[1] 512
-[1] 513
-[1] 514
-[1] 515
-[1] 516
-[1] 517
-[1] 518
-[1] 519
-[1] 520
-[1] 521
-[1] 522
-[1] 523
-[1] 524
-[1] 525
-[1] 526
-[1] 527
-[1] 528
-[1] 529
-[1] 530
-[1] 531
-[1] 532
-[1] 533
-[1] 534
-[1] 535
-[1] 536
-[1] 537
-[1] 538
-[1] 539
-[1] 540
-[1] 541
-[1] 542
-[1] 543
-[1] 544
-[1] 545
-[1] 546
-[1] 547
-[1] 548
-[1] 549
-[1] 550
-> 
-> ggplot(df_formatted) +
-+   geom_density(aes(x = sim_m -  obs_m, fill = pft),alpha = 0.2) +
-+   theme_bw()
-> 
-> 
-> selection <- df_formatted %>% filter(waves < 680 | waves > 750) %>% group_by(site,pft) %>% sample_n(size = 10)
-> ggplot(selection,aes(x=obs_m,y = sim_m,color = pft)) +
-+   geom_point() +
-+   geom_errorbarh(aes(xmin = obs_low,xmax=obs_high)) +
-+   geom_errorbar(aes(ymin = sim_low,ymax=sim_high)) +
-+   geom_abline(slope = 1,linetype = 2) +
-+   facet_wrap(~ site,scales = "free") +
-+   theme_bw()
-> 
-> 
-> Prospect_param_names <- c("Nlayers","Cab","Car","Cw","Cm","ssigma")
-> df_selection <- df_formatted %>% group_by(site,pft) %>% sample_n(size =1) %>% dplyr::select(pft,species,ind,site)
-> Nprospect <- 1000
-> waves <- 400:2500
-> 
-> # Uniform prior
-> Prospect_param_names <- c("Nlayers","Cab","Car","Cw","Cm","ssigma")
-> pft_lowers <- c(Nlayers = 1, Cab = 0 , Car = 0,Cw = 0, Cm = 0, ssigma = 0)
-> pft_uppers <-  c(Nlayers = 5, Cab = 100, Car = 50,Cw = 0.1, Cm = 0.1, ssigma = 1)
-> 
-> new_All_leaf_spectra <- new_ensemble_posterior_all <- data.frame()
-> for (i in seq(nrow(df_selection))){
-+   print(i/nrow(df_selection))
-+   cdata <- data.all[[df_selection$pft[i]]][[df_selection$species[i]]][[df_selection$ind[i]]]
-+   
-+   if (!is.null(cdata)){
-+     cspectrum <- cdata[["spectrum"]]
-+     observed <- as.vector(t(cspectrum[,"value"]))
-+     waves_obs <- as.vector(t(cspectrum[,"wv"]))
-+     observations <- data.frame(wavelength = unlist(waves_obs), obs = unlist(observed))
-+     
-+     prior <- BayesianTools::createUniformPrior(pft_lowers, pft_uppers)
-+     likelihood <- create_likelihood(observed=observed[waves_obs<680 | waves_obs>750], waves_obs[waves_obs<680 | waves_obs>750])
-+     settings_MCMC <- list(iterations = 100000, nrChains = 1)
-+     
-+     # Run inversion
-+     setup <- BayesianTools::createBayesianSetup(likelihood, prior, parallel = FALSE)
-+     samples <- BayesianTools::runMCMC(setup,settings = settings_MCMC)
-+     samples <- BayesianTools::runMCMC(samples, settings = settings_MCMC)
-+     
-+     cdata[["samples"]] <- samples
-+     
-+     posteriors <- BayesianTools::getSample(cdata[["samples"]],numSamples = Nprospect)
-+     colnames(posteriors) <- Prospect_param_names
-+     
-+     df_runs <- data.frame()
-+     for (irun in seq(1,min(nrow(posteriors),Nprospect))){
-+       cparams <- c(posteriors[irun,"Nlayers"],posteriors[irun,"Cab"],posteriors[irun,"Car"],posteriors[irun,"Cw"],posteriors[irun,"Cm"])
-+       crun <- run_prospect(cparams,waves)
-+       df_runs <- rbind(df_runs,
-+                        data.frame(wavelength = waves,sim = crun,run = irun))
-+     }
-+     
-+     # leaves <- as.numeric(unique(as.vector(t(cspectrum[,"name"]))))
-+     df_runs_sum <- df_runs %>% group_by(wavelength) %>% summarise(rmin = min(sim,na.rm=TRUE),
-+                                                              rmax = max(sim,na.rm=TRUE),
-+                                                              alphamin = quantile(sim,0.025),
-+                                                              alphamax = quantile(sim,0.975),
-+                                                              median = quantile(sim,0.5)) %>% mutate(pft= case_when(df_selection$pft[i] == "Liana" ~ "Liana_optical",
-+                                                                                                                    TRUE ~ "Tree_optical"),
-+                                                                                                     ref = case_when(df_selection$site[i] == "FTS" ~ "Sanchez_FTS",
-+                                                                                                                     TRUE ~ "Sanchez_PNM"))
-+                                                              
-+ 
-+     df_obs_sum <- observations %>% group_by(wavelength) %>% summarise(Reflectance_min = min(obs,na.rm=TRUE),
-+                                                                       Reflectance_max = max(obs,na.rm=TRUE),
-+                                                                       Reflectance_alphamin = quantile(obs,0.025),
-+                                                                       Reflectance_alphamax = quantile(obs,0.975),
-+                                                                       Reflectance_median = median(obs)) %>% mutate(pft= case_when(df_selection$pft[i] == "Liana" ~ "Liana_optical",
-+                                                                                                                                     TRUE ~ "Tree_optical"),
-+                                                                                                                      ref = case_when(df_selection$site[i] == "FTS" ~ "Sanchez_FTS",
-+                                                                                                                                      TRUE ~ "Sanchez_PNM"))
-+     
-+     new_ensemble_posterior_all <- rbind(new_ensemble_posterior_all,
-+                                     df_runs_sum)
-+     new_All_leaf_spectra <- rbind(new_All_leaf_spectra,
-+                                   as.data.frame(df_obs_sum))
-+     
-+ 
-+   }
-+ }
-[1] 0.25
- Running DEzs-MCMC, chain  1 iteration 300 of 100002 . Current logp  8873.17 9548.12 9472.734 . Please wait!  Running DEzs-MCMC, chain  1 iteration 600 of 100002 . Current logp  10690.63 11133.98 11021.94 . Please wait!  Running DEzs-MCMC, chain  1 iteration 900 of 100002 . Current logp  13120.59 12730.18 13060.55 . Please wait!  Running DEzs-MCMC, chain  1 iteration 1200 of 100002 . Current logp  13485.46 13554.29 13468.11 . Please wait!  Running DEzs-MCMC, chain  1 iteration 1500 of 100002 . Current logp  13547.08 13554.29 13510.63 . Please wait!  Running DEzs-MCMC, chain  1 iteration 1800 of 100002 . Current logp  13589.65 13554.29 13554.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 2100 of 100002 . Current logp  13601.28 13554.29 13589.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 2400 of 100002 . Current logp  13601.28 13601.28 13592.84 . Please wait!  Running DEzs-MCMC, chain  1 iteration 2700 of 100002 . Current logp  13601.28 13601.28 13623.32 . Please wait!  Running DEzs-MCMC, chain  1 iteration 3000 of 100002 . Current logp  13601.28 13601.28 13625.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 3300 of 100002 . Current logp  13607.93 13614.48 13627.91 . Please wait!  Running DEzs-MCMC, chain  1 iteration 3600 of 100002 . Current logp  13635.26 13614.48 13627.91 . Please wait!  Running DEzs-MCMC, chain  1 iteration 3900 of 100002 . Current logp  13638.44 13626.85 13637.78 . Please wait!  Running DEzs-MCMC, chain  1 iteration 4200 of 100002 . Current logp  13717.71 13763.3 13758.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 4500 of 100002 . Current logp  13826.43 14608.99 13847.51 . Please wait!  Running DEzs-MCMC, chain  1 iteration 4800 of 100002 . Current logp  14695.17 16301.86 15054.35 . Please wait!  Running DEzs-MCMC, chain  1 iteration 5100 of 100002 . Current logp  15991.56 16795.24 15745.73 . Please wait!  Running DEzs-MCMC, chain  1 iteration 5400 of 100002 . Current logp  16340.82 16848.02 16879.47 . Please wait!  Running DEzs-MCMC, chain  1 iteration 5700 of 100002 . Current logp  16571.51 16916.72 17023.78 . Please wait!  Running DEzs-MCMC, chain  1 iteration 6000 of 100002 . Current logp  16849.15 17108.89 17072.33 . Please wait!  Running DEzs-MCMC, chain  1 iteration 6300 of 100002 . Current logp  16849.15 17118.82 17085.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 6600 of 100002 . Current logp  16858.7 17118.82 17102.96 . Please wait!  Running DEzs-MCMC, chain  1 iteration 6900 of 100002 . Current logp  16886.18 17119.68 17143.58 . Please wait!  Running DEzs-MCMC, chain  1 iteration 7200 of 100002 . Current logp  17195.36 17253.88 17155.85 . Please wait!  Running DEzs-MCMC, chain  1 iteration 7500 of 100002 . Current logp  17195.36 17264.18 17182.47 . Please wait!  Running DEzs-MCMC, chain  1 iteration 7800 of 100002 . Current logp  17356.46 17311.53 17267.72 . Please wait!  Running DEzs-MCMC, chain  1 iteration 8100 of 100002 . Current logp  17389.98 17311.86 17326.86 . Please wait!  Running DEzs-MCMC, chain  1 iteration 8400 of 100002 . Current logp  17407.99 17346.65 17360.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 8700 of 100002 . Current logp  17407.99 17423.58 17360.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 9000 of 100002 . Current logp  17407.99 17423.58 17400.58 . Please wait!  Running DEzs-MCMC, chain  1 iteration 9300 of 100002 . Current logp  17409.42 17447.33 17411.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 9600 of 100002 . Current logp  17422.82 17447.33 17417.39 . Please wait!  Running DEzs-MCMC, chain  1 iteration 9900 of 100002 . Current logp  17440.96 17450 17432.23 . Please wait!  Running DEzs-MCMC, chain  1 iteration 10200 of 100002 . Current logp  17460.12 17450 17441.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 10500 of 100002 . Current logp  17477.2 17450.66 17441.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 10800 of 100002 . Current logp  17490.81 17450.66 17445.64 . Please wait!  Running DEzs-MCMC, chain  1 iteration 11100 of 100002 . Current logp  17488.13 17506.57 17508.32 . Please wait!  Running DEzs-MCMC, chain  1 iteration 11400 of 100002 . Current logp  17546.66 17512.77 17517.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 11700 of 100002 . Current logp  17559.94 17530.12 17527.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 12000 of 100002 . Current logp  17571.37 17544.41 17569.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 12300 of 100002 . Current logp  17571.71 17575.19 17573.45 . Please wait!  Running DEzs-MCMC, chain  1 iteration 12600 of 100002 . Current logp  17571.65 17575.19 17574.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 12900 of 100002 . Current logp  17571.65 17578.31 17574.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 13200 of 100002 . Current logp  17578.09 17576.58 17574.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 13500 of 100002 . Current logp  17578.09 17576.58 17574.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 13800 of 100002 . Current logp  17576.58 17576.58 17574.34 . Please wait!  Running DEzs-MCMC, chain  1 iteration 14100 of 100002 . Current logp  17576.58 17574.3 17574.96 . Please wait!  Running DEzs-MCMC, chain  1 iteration 14400 of 100002 . Current logp  17576.58 17576.6 17574.96 . Please wait!  Running DEzs-MCMC, chain  1 iteration 14700 of 100002 . Current logp  17574.86 17575.01 17575.48 . Please wait!  Running DEzs-MCMC, chain  1 iteration 15000 of 100002 . Current logp  17574.32 17573.02 17578.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 15300 of 100002 . Current logp  17577.88 17575.92 17578.8 . Please wait!  Running DEzs-MCMC, chain  1 iteration 15600 of 100002 . Current logp  17576.95 17576.45 17577.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 15900 of 100002 . Current logp  17579.4 17576.6 17577.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 16200 of 100002 . Current logp  17579.4 17578.63 17577.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 16500 of 100002 . Current logp  17579.4 17576.73 17577.81 . Please wait!  Running DEzs-MCMC, chain  1 iteration 16800 of 100002 . Current logp  17579.4 17578.89 17576.86 . Please wait!  Running DEzs-MCMC, chain  1 iteration 17100 of 100002 . Current logp  17578.78 17577.41 17575.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 17400 of 100002 . Current logp  17577.68 17576.4 17574.76 . Please wait!  Running DEzs-MCMC, chain  1 iteration 17700 of 100002 . Current logp  17578.06 17576.74 17577.81 . Please wait!  Running DEzs-MCMC, chain  1 iteration 18000 of 100002 . Current logp  17578.34 17572.17 17576.42 . Please wait!  Running DEzs-MCMC, chain  1 iteration 18300 of 100002 . Current logp  17576.78 17576.26 17571.89 . Please wait!  Running DEzs-MCMC, chain  1 iteration 18600 of 100002 . Current logp  17575.69 17577.02 17574.62 . Please wait!  Running DEzs-MCMC, chain  1 iteration 18900 of 100002 . Current logp  17578.62 17578.68 17576.16 . Please wait!  Running DEzs-MCMC, chain  1 iteration 19200 of 100002 . Current logp  17576.37 17578.85 17575.49 . Please wait!  Running DEzs-MCMC, chain  1 iteration 19500 of 100002 . Current logp  17577.73 17575.68 17577.07 . Please wait!  Running DEzs-MCMC, chain  1 iteration 19800 of 100002 . Current logp  17577.25 17577.49 17577.43 . Please wait!  Running DEzs-MCMC, chain  1 iteration 20100 of 100002 . Current logp  17578.24 17577.1 17578.24 . Please wait!  Running DEzs-MCMC, chain  1 iteration 20400 of 100002 . Current logp  17578.3 17575.42 17577.5 . Please wait!  Running DEzs-MCMC, chain  1 iteration 20700 of 100002 . Current logp  17578.47 17576.36 17575.05 . Please wait!  Running DEzs-MCMC, chain  1 iteration 21000 of 100002 . Current logp  17576.69 17573.86 17577.94 . Please wait!  Running DEzs-MCMC, chain  1 iteration 21300 of 100002 . Current logp  17574.55 17578.81 17574.21 . Please wait!  Running DEzs-MCMC, chain  1 iteration 21600 of 100002 . Current logp  17574.63 17578.2 17577.47 . Please wait!  Running DEzs-MCMC, chain  1 iteration 21900 of 100002 . Current logp  17577.83 17578.71 17577.43 . Please wait!  Running DEzs-MCMC, chain  1 iteration 22200 of 100002 . Current logp  17577.11 17574.38 17576.38 . Please wait!  Running DEzs-MCMC, chain  1 iteration 22500 of 100002 . Current logp  17578.5 17575.48 17575.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 22800 of 100002 . Current logp  17578.76 17575.15 17578.58 . Please wait!  Running DEzs-MCMC, chain  1 iteration 23100 of 100002 . Current logp  17578.24 17575.27 17577.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 23400 of 100002 . Current logp  17577.59 17574.96 17577.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 23700 of 100002 . Current logp  17577.24 17575.86 17575.04 . Please wait!  Running DEzs-MCMC, chain  1 iteration 24000 of 100002 . Current logp  17575.02 17578.3 17578.3 . Please wait!  Running DEzs-MCMC, chain  1 iteration 24300 of 100002 . Current logp  17576.71 17578.47 17576.42 . Please wait!  Running DEzs-MCMC, chain  1 iteration 24600 of 100002 . Current logp  17576.18 17572.74 17578.02 . Please wait!  Running DEzs-MCMC, chain  1 iteration 24900 of 100002 . Current logp  17573.71 17575.72 17577.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 25200 of 100002 . Current logp  17576.05 17577.36 17578.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 25500 of 100002 . Current logp  17571.53 17578.25 17575.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 25800 of 100002 . Current logp  17578.45 17577.8 17577.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 26100 of 100002 . Current logp  17573.19 17577.26 17576.93 . Please wait!  Running DEzs-MCMC, chain  1 iteration 26400 of 100002 . Current logp  17577.32 17574.78 17577.69 . Please wait!  Running DEzs-MCMC, chain  1 iteration 26700 of 100002 . Current logp  17576.52 17574.74 17576.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 27000 of 100002 . Current logp  17575.63 17575.66 17578.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 27300 of 100002 . Current logp  17578.43 17575.43 17579.07 . Please wait!  Running DEzs-MCMC, chain  1 iteration 27600 of 100002 . Current logp  17577.14 17576.72 17575.99 . Please wait!  Running DEzs-MCMC, chain  1 iteration 27900 of 100002 . Current logp  17575.51 17575.59 17573.97 . Please wait!  Running DEzs-MCMC, chain  1 iteration 28200 of 100002 . Current logp  17578.95 17578.49 17577.19 . Please wait!  Running DEzs-MCMC, chain  1 iteration 28500 of 100002 . Current logp  17576.77 17578.54 17577.13 . Please wait!  Running DEzs-MCMC, chain  1 iteration 28800 of 100002 . Current logp  17577.75 17575.32 17576.55 . Please wait!  Running DEzs-MCMC, chain  1 iteration 29100 of 100002 . Current logp  17575.7 17576.78 17576.43 . Please wait!  Running DEzs-MCMC, chain  1 iteration 29400 of 100002 . Current logp  17578.1 17572.3 17576.81 . Please wait!  Running DEzs-MCMC, chain  1 iteration 29700 of 100002 . Current logp  17577.92 17575.77 17575.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 30000 of 100002 . Current logp  17573.52 17577.84 17577.25 . Please wait!  Running DEzs-MCMC, chain  1 iteration 30300 of 100002 . Current logp  17576.57 17577.92 17578.74 . Please wait!  Running DEzs-MCMC, chain  1 iteration 30600 of 100002 . Current logp  17577.28 17575.92 17578.89 . Please wait!  Running DEzs-MCMC, chain  1 iteration 30900 of 100002 . Current logp  17572.93 17571.87 17576.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 31200 of 100002 . Current logp  17572.13 17576.33 17577.94 . Please wait!  Running DEzs-MCMC, chain  1 iteration 31500 of 100002 . Current logp  17574.29 17576.13 17574.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 31800 of 100002 . Current logp  17576.31 17574.32 17574.76 . Please wait!  Running DEzs-MCMC, chain  1 iteration 32100 of 100002 . Current logp  17578.38 17573.78 17577.02 . Please wait!  Running DEzs-MCMC, chain  1 iteration 32400 of 100002 . Current logp  17576.88 17576.85 17576.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 32700 of 100002 . Current logp  17574.25 17576.73 17574.86 . Please wait!  Running DEzs-MCMC, chain  1 iteration 33000 of 100002 . Current logp  17577.16 17577.69 17578.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 33300 of 100002 . Current logp  17575.69 17578.17 17577.14 . Please wait!  Running DEzs-MCMC, chain  1 iteration 33600 of 100002 . Current logp  17578.27 17576.84 17575.71 . Please wait!  Running DEzs-MCMC, chain  1 iteration 33900 of 100002 . Current logp  17576.71 17578.63 17575.47 . Please wait!  Running DEzs-MCMC, chain  1 iteration 34200 of 100002 . Current logp  17575.75 17577.6 17577.82 . Please wait!  Running DEzs-MCMC, chain  1 iteration 34500 of 100002 . Current logp  17577.75 17574.53 17572.35 . Please wait!  Running DEzs-MCMC, chain  1 iteration 34800 of 100002 . Current logp  17576.43 17576.39 17577.39 . Please wait!  Running DEzs-MCMC, chain  1 iteration 35100 of 100002 . Current logp  17578.05 17578.95 17577.18 . Please wait!  Running DEzs-MCMC, chain  1 iteration 35400 of 100002 . Current logp  17577.68 17574.9 17574.35 . Please wait!  Running DEzs-MCMC, chain  1 iteration 35700 of 100002 . Current logp  17576.95 17576.59 17578.46 . Please wait!  Running DEzs-MCMC, chain  1 iteration 36000 of 100002 . Current logp  17574.96 17574.63 17577.18 . Please wait!  Running DEzs-MCMC, chain  1 iteration 36300 of 100002 . Current logp  17571.42 17574.03 17577.28 . Please wait!  Running DEzs-MCMC, chain  1 iteration 36600 of 100002 . Current logp  17576.45 17576.54 17577.64 . Please wait!  Running DEzs-MCMC, chain  1 iteration 36900 of 100002 . Current logp  17577.84 17578.72 17576.01 . Please wait!  Running DEzs-MCMC, chain  1 iteration 37200 of 100002 . Current logp  17577.85 17576.1 17578.64 . Please wait!  Running DEzs-MCMC, chain  1 iteration 37500 of 100002 . Current logp  17578.58 17577.48 17574.49 . Please wait!  Running DEzs-MCMC, chain  1 iteration 37800 of 100002 . Current logp  17578.29 17573.05 17572.68 . Please wait!  Running DEzs-MCMC, chain  1 iteration 38100 of 100002 . Current logp  17573.96 17569.26 17574.37 . Please wait!  Running DEzs-MCMC, chain  1 iteration 38400 of 100002 . Current logp  17577.04 17574.05 17577.01 . Please wait!  Running DEzs-MCMC, chain  1 iteration 38700 of 100002 . Current logp  17577.42 17575.03 17575.05 . Please wait!  Running DEzs-MCMC, chain  1 iteration 39000 of 100002 . Current logp  17577.36 17578.49 17577.57 . Please wait!  Running DEzs-MCMC, chain  1 iteration 39300 of 100002 . Current logp  17577.88 17574.84 17573.07 . Please wait!  Running DEzs-MCMC, chain  1 iteration 39600 of 100002 . Current logp  17578.53 17576.02 17574.68 . Please wait!  Running DEzs-MCMC, chain  1 iteration 39900 of 100002 . Current logp  17577.05 17574.78 17576.45 . Please wait!  Running DEzs-MCMC, chain  1 iteration 40200 of 100002 . Current logp  17577.92 17574.61 17575.68 . Please wait!  Running DEzs-MCMC, chain  1 iteration 40500 of 100002 . Current logp  17577.08 17574.54 17575.54 . Please wait!  Running DEzs-MCMC, chain  1 iteration 40800 of 100002 . Current logp  17576.5 17578.82 17575.39 . Please wait!  Running DEzs-MCMC, chain  1 iteration 41100 of 100002 . Current logp  17578.66 17578.88 17572.62 . Please wait!  Running DEzs-MCMC, chain  1 iteration 41400 of 100002 . Current logp  17573.49 17575.51 17573.89 . Please wait!  Running DEzs-MCMC, chain  1 iteration 41700 of 100002 . Current logp  17574.73 17577.6 17574.37 . Please wait!  Running DEzs-MCMC, chain  1 iteration 42000 of 100002 . Current logp  17574.45 17578.62 17578.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 42300 of 100002 . Current logp  17577.67 17577.1 17576.33 . Please wait!  Running DEzs-MCMC, chain  1 iteration 42600 of 100002 . Current logp  17572.77 17576.67 17577.92 . Please wait!  Running DEzs-MCMC, chain  1 iteration 42900 of 100002 . Current logp  17577.14 17578.69 17575.88 . Please wait!  Running DEzs-MCMC, chain  1 iteration 43200 of 100002 . Current logp  17578.3 17578.73 17578.2 . Please wait!  Running DEzs-MCMC, chain  1 iteration 43500 of 100002 . Current logp  17577.44 17574.41 17573.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 43800 of 100002 . Current logp  17576.52 17576.55 17577.14 . Please wait!  Running DEzs-MCMC, chain  1 iteration 44100 of 100002 . Current logp  17577.5 17570.77 17576.74 . Please wait!  Running DEzs-MCMC, chain  1 iteration 44400 of 100002 . Current logp  17578.19 17573.19 17575.14 . Please wait!  Running DEzs-MCMC, chain  1 iteration 44700 of 100002 . Current logp  17578.59 17578.41 17574.99 . Please wait!  Running DEzs-MCMC, chain  1 iteration 45000 of 100002 . Current logp  17568.73 17573.33 17576.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 45300 of 100002 . Current logp  17577.62 17576.01 17577.07 . Please wait!  Running DEzs-MCMC, chain  1 iteration 45600 of 100002 . Current logp  17578.28 17577.43 17576.46 . Please wait!  Running DEzs-MCMC, chain  1 iteration 45900 of 100002 . Current logp  17573.19 17575.38 17575.59 . Please wait!  Running DEzs-MCMC, chain  1 iteration 46200 of 100002 . Current logp  17576.49 17578.2 17573.5 . Please wait!  Running DEzs-MCMC, chain  1 iteration 46500 of 100002 . Current logp  17576.93 17578.29 17576.66 . Please wait!  Running DEzs-MCMC, chain  1 iteration 46800 of 100002 . Current logp  17575.63 17577.7 17575.87 . Please wait!  Running DEzs-MCMC, chain  1 iteration 47100 of 100002 . Current logp  17575.79 17573.04 17578.08 . Please wait!  Running DEzs-MCMC, chain  1 iteration 47400 of 100002 . Current logp  17576.65 17577.77 17575.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 47700 of 100002 . Current logp  17578.74 17577.25 17578.59 . Please wait!  Running DEzs-MCMC, chain  1 iteration 48000 of 100002 . Current logp  17575.25 17577.57 17574.67 . Please wait!  Running DEzs-MCMC, chain  1 iteration 48300 of 100002 . Current logp  17576.06 17572.85 17577.79 . Please wait!  Running DEzs-MCMC, chain  1 iteration 48600 of 100002 . Current logp  17578.77 17578.61 17576.41 . Please wait!  Running DEzs-MCMC, chain  1 iteration 48900 of 100002 . Current logp  17576.76 17578.55 17576.85 . Please wait!  Running DEzs-MCMC, chain  1 iteration 49200 of 100002 . Current logp  17576.84 17577.99 17574.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 49500 of 100002 . Current logp  17576.75 17577.83 17574.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 49800 of 100002 . Current logp  17576.32 17578.3 17576.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 50100 of 100002 . Current logp  17577.08 17575.54 17577.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 50400 of 100002 . Current logp  17579.02 17575.69 17573.04 . Please wait!  Running DEzs-MCMC, chain  1 iteration 50700 of 100002 . Current logp  17576.75 17579.08 17577.92 . Please wait!  Running DEzs-MCMC, chain  1 iteration 51000 of 100002 . Current logp  17575.97 17572.68 17577.53 . Please wait!  Running DEzs-MCMC, chain  1 iteration 51300 of 100002 . Current logp  17573.19 17574.74 17576.06 . Please wait!  Running DEzs-MCMC, chain  1 iteration 51600 of 100002 . Current logp  17573.22 17576.96 17578.92 . Please wait!  Running DEzs-MCMC, chain  1 iteration 51900 of 100002 . Current logp  17578.63 17575.7 17578.16 . Please wait!  Running DEzs-MCMC, chain  1 iteration 52200 of 100002 . Current logp  17574.12 17578.43 17578.21 . Please wait!  Running DEzs-MCMC, chain  1 iteration 52500 of 100002 . Current logp  17577.82 17578.25 17574.99 . Please wait!  Running DEzs-MCMC, chain  1 iteration 52800 of 100002 . Current logp  17576.18 17575.58 17577.28 . Please wait!  Running DEzs-MCMC, chain  1 iteration 53100 of 100002 . Current logp  17575.9 17577.48 17576.24 . Please wait!  Running DEzs-MCMC, chain  1 iteration 53400 of 100002 . Current logp  17574.88 17575.07 17578.19 . Please wait!  Running DEzs-MCMC, chain  1 iteration 53700 of 100002 . Current logp  17573.52 17573.37 17576.84 . Please wait!  Running DEzs-MCMC, chain  1 iteration 54000 of 100002 . Current logp  17576.53 17573.26 17577.81 . Please wait!  Running DEzs-MCMC, chain  1 iteration 54300 of 100002 . Current logp  17578.28 17575.21 17577.76 . Please wait!  Running DEzs-MCMC, chain  1 iteration 54600 of 100002 . Current logp  17578.13 17575.56 17576.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 54900 of 100002 . Current logp  17578.23 17575.75 17577.46 . Please wait!  Running DEzs-MCMC, chain  1 iteration 55200 of 100002 . Current logp  17578.34 17577.44 17577.72 . Please wait!  Running DEzs-MCMC, chain  1 iteration 55500 of 100002 . Current logp  17577.42 17577.95 17577.15 . Please wait!  Running DEzs-MCMC, chain  1 iteration 55800 of 100002 . Current logp  17574.4 17574.35 17578.72 . Please wait!  Running DEzs-MCMC, chain  1 iteration 56100 of 100002 . Current logp  17578.57 17576.1 17575.83 . Please wait!  Running DEzs-MCMC, chain  1 iteration 56400 of 100002 . Current logp  17576.23 17577.32 17574.87 . Please wait!  Running DEzs-MCMC, chain  1 iteration 56700 of 100002 . Current logp  17576.95 17578 17572.55 . Please wait!  Running DEzs-MCMC, chain  1 iteration 57000 of 100002 . Current logp  17577.92 17577.06 17577.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 57300 of 100002 . Current logp  17576.95 17578.99 17578.25 . Please wait!  Running DEzs-MCMC, chain  1 iteration 57600 of 100002 . Current logp  17575.92 17578.17 17577.18 . Please wait!  Running DEzs-MCMC, chain  1 iteration 57900 of 100002 . Current logp  17575.38 17577.46 17578.02 . Please wait!  Running DEzs-MCMC, chain  1 iteration 58200 of 100002 . Current logp  17573.13 17577.21 17576.88 . Please wait!  Running DEzs-MCMC, chain  1 iteration 58500 of 100002 . Current logp  17578.17 17577 17576.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 58800 of 100002 . Current logp  17575.02 17576.3 17577.73 . Please wait!  Running DEzs-MCMC, chain  1 iteration 59100 of 100002 . Current logp  17577.79 17577.06 17577.24 . Please wait!  Running DEzs-MCMC, chain  1 iteration 59400 of 100002 . Current logp  17576.15 17577.04 17578.75 . Please wait!  Running DEzs-MCMC, chain  1 iteration 59700 of 100002 . Current logp  17571.03 17577.58 17578.13 . Please wait!  Running DEzs-MCMC, chain  1 iteration 60000 of 100002 . Current logp  17576.71 17577.11 17571.37 . Please wait!  Running DEzs-MCMC, chain  1 iteration 60300 of 100002 . Current logp  17574.6 17577.49 17574.57 . Please wait!  Running DEzs-MCMC, chain  1 iteration 60600 of 100002 . Current logp  17576.14 17577.63 17573.92 . Please wait!  Running DEzs-MCMC, chain  1 iteration 60900 of 100002 . Current logp  17576.03 17576.16 17578.22 . Please wait!  Running DEzs-MCMC, chain  1 iteration 61200 of 100002 . Current logp  17576.17 17577.96 17577.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 61500 of 100002 . Current logp  17577.7 17576.54 17577.86 . Please wait!  Running DEzs-MCMC, chain  1 iteration 61800 of 100002 . Current logp  17577.34 17578.32 17576.53 . Please wait!  Running DEzs-MCMC, chain  1 iteration 62100 of 100002 . Current logp  17577.95 17576.93 17574.62 . Please wait!  Running DEzs-MCMC, chain  1 iteration 62400 of 100002 . Current logp  17576.99 17575.14 17576.09 . Please wait!  Running DEzs-MCMC, chain  1 iteration 62700 of 100002 . Current logp  17576.67 17578.74 17577.84 . Please wait!  Running DEzs-MCMC, chain  1 iteration 63000 of 100002 . Current logp  17576.03 17572.52 17575.86 . Please wait!  Running DEzs-MCMC, chain  1 iteration 63300 of 100002 . Current logp  17577.2 17576.02 17577.67 . Please wait!  Running DEzs-MCMC, chain  1 iteration 63600 of 100002 . Current logp  17575.23 17575.78 17574.72 . Please wait!  Running DEzs-MCMC, chain  1 iteration 63900 of 100002 . Current logp  17577.8 17576.77 17577.94 . Please wait!  Running DEzs-MCMC, chain  1 iteration 64200 of 100002 . Current logp  17577.32 17576.82 17575.77 . Please wait!  Running DEzs-MCMC, chain  1 iteration 64500 of 100002 . Current logp  17577.06 17576.94 17575.04 . Please wait!  Running DEzs-MCMC, chain  1 iteration 64800 of 100002 . Current logp  17575.35 17578.95 17577 . Please wait!  Running DEzs-MCMC, chain  1 iteration 65100 of 100002 . Current logp  17577.49 17579.03 17578.44 . Please wait!  Running DEzs-MCMC, chain  1 iteration 65400 of 100002 . Current logp  17576.43 17575 17577.09 . Please wait!  Running DEzs-MCMC, chain  1 iteration 65700 of 100002 . Current logp  17573.72 17574.16 17578.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 66000 of 100002 . Current logp  17576.67 17577.54 17578.09 . Please wait!  Running DEzs-MCMC, chain  1 iteration 66300 of 100002 . Current logp  17578.92 17577.81 17577.07 . Please wait!  Running DEzs-MCMC, chain  1 iteration 66600 of 100002 . Current logp  17576.25 17576.1 17577.32 . Please wait!  Running DEzs-MCMC, chain  1 iteration 66900 of 100002 . Current logp  17578.15 17576.77 17578.19 . Please wait!  Running DEzs-MCMC, chain  1 iteration 67200 of 100002 . Current logp  17577.85 17571.53 17578.59 . Please wait!  Running DEzs-MCMC, chain  1 iteration 67500 of 100002 . Current logp  17575.31 17578.63 17577.12 . Please wait!  Running DEzs-MCMC, chain  1 iteration 67800 of 100002 . Current logp  17577.01 17575.2 17578.1 . Please wait!  Running DEzs-MCMC, chain  1 iteration 68100 of 100002 . Current logp  17576.78 17574.64 17575.62 . Please wait!  Running DEzs-MCMC, chain  1 iteration 68400 of 100002 . Current logp  17574.5 17577.86 17577.18 . Please wait!  Running DEzs-MCMC, chain  1 iteration 68700 of 100002 . Current logp  17574.63 17575.93 17577.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 69000 of 100002 . Current logp  17576.76 17576.89 17576.2 . Please wait!  Running DEzs-MCMC, chain  1 iteration 69300 of 100002 . Current logp  17575.34 17578.51 17575.08 . Please wait!  Running DEzs-MCMC, chain  1 iteration 69600 of 100002 . Current logp  17576.61 17575.93 17574.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 69900 of 100002 . Current logp  17578.8 17574.46 17576.4 . Please wait!  Running DEzs-MCMC, chain  1 iteration 70200 of 100002 . Current logp  17574.22 17573.79 17577.68 . Please wait!  Running DEzs-MCMC, chain  1 iteration 70500 of 100002 . Current logp  17576.74 17577.83 17577.24 . Please wait!  Running DEzs-MCMC, chain  1 iteration 70800 of 100002 . Current logp  17579.03 17578.82 17573.22 . Please wait!  Running DEzs-MCMC, chain  1 iteration 71100 of 100002 . Current logp  17578.86 17578.31 17578.5 . Please wait!  Running DEzs-MCMC, chain  1 iteration 71400 of 100002 . Current logp  17577.87 17576.46 17576.18 . Please wait!  Running DEzs-MCMC, chain  1 iteration 71700 of 100002 . Current logp  17577.12 17577.94 17578.76 . Please wait!  Running DEzs-MCMC, chain  1 iteration 72000 of 100002 . Current logp  17576.82 17577.99 17575.78 . Please wait!  Running DEzs-MCMC, chain  1 iteration 72300 of 100002 . Current logp  17576.01 17577.52 17576.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 72600 of 100002 . Current logp  17578.19 17577.36 17572.65 . Please wait!  Running DEzs-MCMC, chain  1 iteration 72900 of 100002 . Current logp  17573.45 17577.88 17577.16 . Please wait!  Running DEzs-MCMC, chain  1 iteration 73200 of 100002 . Current logp  17576.42 17577.47 17576.22 . Please wait!  Running DEzs-MCMC, chain  1 iteration 73500 of 100002 . Current logp  17576.6 17575.87 17574.98 . Please wait!  Running DEzs-MCMC, chain  1 iteration 73800 of 100002 . Current logp  17577.8 17578.36 17578.05 . Please wait!  Running DEzs-MCMC, chain  1 iteration 74100 of 100002 . Current logp  17572.46 17575.1 17577.2 . Please wait!  Running DEzs-MCMC, chain  1 iteration 74400 of 100002 . Current logp  17575.7 17579.08 17576.27 . Please wait!  Running DEzs-MCMC, chain  1 iteration 74700 of 100002 . Current logp  17575.46 17576.05 17576.64 . Please wait!  Running DEzs-MCMC, chain  1 iteration 75000 of 100002 . Current logp  17574.92 17577.79 17577.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 75300 of 100002 . Current logp  17575.26 17575.28 17578.09 . Please wait!  Running DEzs-MCMC, chain  1 iteration 75600 of 100002 . Current logp  17578.76 17577.66 17578.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 75900 of 100002 . Current logp  17577.18 17578.06 17575.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 76200 of 100002 . Current logp  17577.25 17578.12 17577.11 . Please wait!  Running DEzs-MCMC, chain  1 iteration 76500 of 100002 . Current logp  17578.5 17574.83 17577.33 . Please wait!  Running DEzs-MCMC, chain  1 iteration 76800 of 100002 . Current logp  17577.5 17578.85 17578.06 . Please wait!  Running DEzs-MCMC, chain  1 iteration 77100 of 100002 . Current logp  17578.81 17570.82 17579.03 . Please wait!  Running DEzs-MCMC, chain  1 iteration 77400 of 100002 . Current logp  17577.1 17570.39 17577.98 . Please wait!  Running DEzs-MCMC, chain  1 iteration 77700 of 100002 . Current logp  17577.42 17575.95 17577.8 . Please wait!  Running DEzs-MCMC, chain  1 iteration 78000 of 100002 . Current logp  17577.24 17577.49 17576.31 . Please wait!  Running DEzs-MCMC, chain  1 iteration 78300 of 100002 . Current logp  17575.73 17578.1 17577.54 . Please wait!  Running DEzs-MCMC, chain  1 iteration 78600 of 100002 . Current logp  17577.8 17577.06 17578.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 78900 of 100002 . Current logp  17575.96 17576.72 17574.72 . Please wait!  Running DEzs-MCMC, chain  1 iteration 79200 of 100002 . Current logp  17577.24 17576.82 17573.53 . Please wait!  Running DEzs-MCMC, chain  1 iteration 79500 of 100002 . Current logp  17578.19 17576.06 17577.2 . Please wait!  Running DEzs-MCMC, chain  1 iteration 79800 of 100002 . Current logp  17576.33 17574.31 17574.6 . Please wait!  Running DEzs-MCMC, chain  1 iteration 80100 of 100002 . Current logp  17576.65 17577.01 17574.78 . Please wait!  Running DEzs-MCMC, chain  1 iteration 80400 of 100002 . Current logp  17574.37 17577.2 17579.23 . Please wait!  Running DEzs-MCMC, chain  1 iteration 80700 of 100002 . Current logp  17577.02 17578.82 17577.49 . Please wait!  Running DEzs-MCMC, chain  1 iteration 81000 of 100002 . Current logp  17576.86 17578.15 17575.19 . Please wait!  Running DEzs-MCMC, chain  1 iteration 81300 of 100002 . Current logp  17575.86 17575.36 17574.37 . Please wait!  Running DEzs-MCMC, chain  1 iteration 81600 of 100002 . Current logp  17575.56 17576.51 17578.14 . Please wait!  Running DEzs-MCMC, chain  1 iteration 81900 of 100002 . Current logp  17578.15 17566.62 17577.32 . Please wait!  Running DEzs-MCMC, chain  1 iteration 82200 of 100002 . Current logp  17578.95 17577.47 17574.69 . Please wait!  Running DEzs-MCMC, chain  1 iteration 82500 of 100002 . Current logp  17573.94 17576.91 17575.93 . Please wait!  Running DEzs-MCMC, chain  1 iteration 82800 of 100002 . Current logp  17576.65 17577.23 17570.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 83100 of 100002 . Current logp  17577.61 17576.29 17576.29 . Please wait!  Running DEzs-MCMC, chain  1 iteration 83400 of 100002 . Current logp  17575.6 17578.45 17576.08 . Please wait!  Running DEzs-MCMC, chain  1 iteration 83700 of 100002 . Current logp  17575.39 17575.11 17577.95 . Please wait!  Running DEzs-MCMC, chain  1 iteration 84000 of 100002 . Current logp  17575.99 17575.44 17576.69 . Please wait!  Running DEzs-MCMC, chain  1 iteration 84300 of 100002 . Current logp  17578.97 17573.17 17577.98 . Please wait!  Running DEzs-MCMC, chain  1 iteration 84600 of 100002 . Current logp  17578.74 17578.05 17577.63 . Please wait!  Running DEzs-MCMC, chain  1 iteration 84900 of 100002 . Current logp  17578.72 17577.9 17576.28 . Please wait!  Running DEzs-MCMC, chain  1 iteration 85200 of 100002 . Current logp  17574.61 17578.45 17578.55 . Please wait!  Running DEzs-MCMC, chain  1 iteration 85500 of 100002 . Current logp  17577.9 17575.11 17576.23 . Please wait!  Running DEzs-MCMC, chain  1 iteration 85800 of 100002 . Current logp  17578.44 17578.91 17576.16 . Please wait!  Running DEzs-MCMC, chain  1 iteration 86100 of 100002 . Current logp  17576.69 17578.17 17576.92 . Please wait!  Running DEzs-MCMC, chain  1 iteration 86400 of 100002 . Current logp  17577.37 17578.34 17576.96 . Please wait!  Running DEzs-MCMC, chain  1 iteration 86700 of 100002 . Current logp  17579.04 17577.87 17573.28 . Please wait!  Running DEzs-MCMC, chain  1 iteration 87000 of 100002 . Current logp  17577.72 17575.15 17577.42 . Please wait!  Running DEzs-MCMC, chain  1 iteration 87300 of 100002 . Current logp  17579.35 17576.41 17576.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 87600 of 100002 . Current logp  17577.94 17576.58 17577.6 . Please wait!  Running DEzs-MCMC, chain  1 iteration 87900 of 100002 . Current logp  17575.35 17578.28 17577.55 . Please wait!  Running DEzs-MCMC, chain  1 iteration 88200 of 100002 . Current logp  17575.82 17576.35 17574.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 88500 of 100002 . Current logp  17576.8 17575.22 17574.35 . Please wait!  Running DEzs-MCMC, chain  1 iteration 88800 of 100002 . Current logp  17578.23 17577.72 17573.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 89100 of 100002 . Current logp  17578.11 17571.75 17576.83 . Please wait!  Running DEzs-MCMC, chain  1 iteration 89400 of 100002 . Current logp  17577.26 17575.05 17578.25 . Please wait!  Running DEzs-MCMC, chain  1 iteration 89700 of 100002 . Current logp  17576.24 17577.13 17578.44 . Please wait!  Running DEzs-MCMC, chain  1 iteration 90000 of 100002 . Current logp  17578.44 17577.66 17575.38 . Please wait!  Running DEzs-MCMC, chain  1 iteration 90300 of 100002 . Current logp  17576.88 17577.5 17576.79 . Please wait!  Running DEzs-MCMC, chain  1 iteration 90600 of 100002 . Current logp  17577.9 17574.87 17577.41 . Please wait!  Running DEzs-MCMC, chain  1 iteration 90900 of 100002 . Current logp  17574.74 17577.82 17575.85 . Please wait!  Running DEzs-MCMC, chain  1 iteration 91200 of 100002 . Current logp  17578.77 17573.9 17578.79 . Please wait!  Running DEzs-MCMC, chain  1 iteration 91500 of 100002 . Current logp  17575.51 17577.09 17576.19 . Please wait!  Running DEzs-MCMC, chain  1 iteration 91800 of 100002 . Current logp  17576.16 17578.23 17570.76 . Please wait!  Running DEzs-MCMC, chain  1 iteration 92100 of 100002 . Current logp  17576.31 17578.97 17576.91 . Please wait!  Running DEzs-MCMC, chain  1 iteration 92400 of 100002 . Current logp  17577.04 17577.97 17575.69 . Please wait!  Running DEzs-MCMC, chain  1 iteration 92700 of 100002 . Current logp  17577.22 17578.34 17575.15 . Please wait!  Running DEzs-MCMC, chain  1 iteration 93000 of 100002 . Current logp  17578.14 17574.41 17579.24 . Please wait!  Running DEzs-MCMC, chain  1 iteration 93300 of 100002 . Current logp  17577.12 17576.47 17575.87 . Please wait!  Running DEzs-MCMC, chain  1 iteration 93600 of 100002 . Current logp  17578.13 17572.57 17577.73 . Please wait!  Running DEzs-MCMC, chain  1 iteration 93900 of 100002 . Current logp  17577.72 17576.88 17577.83 . Please wait!  Running DEzs-MCMC, chain  1 iteration 94200 of 100002 . Current logp  17576.09 17578.56 17577.59 . Please wait!  Running DEzs-MCMC, chain  1 iteration 94500 of 100002 . Current logp  17574.74 17575.24 17577.52 . Please wait!  Running DEzs-MCMC, chain  1 iteration 94800 of 100002 . Current logp  17577.57 17576.18 17577.6 . Please wait!  Running DEzs-MCMC, chain  1 iteration 95100 of 100002 . Current logp  17575.39 17572.69 17577.53 . Please wait!  Running DEzs-MCMC, chain  1 iteration 95400 of 100002 . Current logp  17577.14 17578.11 17576.39 . Please wait!  Running DEzs-MCMC, chain  1 iteration 95700 of 100002 . Current logp  17577.81 17577.63 17576.68 . Please wait!  Running DEzs-MCMC, chain  1 iteration 96000 of 100002 . Current logp  17576.54 17576.79 17576.84 . Please wait!  Running DEzs-MCMC, chain  1 iteration 96300 of 100002 . Current logp  17578.92 17576.68 17575.57 . Please wait!  Running DEzs-MCMC, chain  1 iteration 96600 of 100002 . Current logp  17573.94 17576.95 17575.56 . Please wait!  Running DEzs-MCMC, chain  1 iteration 96900 of 100002 . Current logp  17576.71 17579.15 17571.79 . Please wait!  Running DEzs-MCMC, chain  1 iteration 97200 of 100002 . Current logp  17577.9 17575.93 17576.05 . Please wait!  Running DEzs-MCMC, chain  1 iteration 97500 of 100002 . Current logp  17576.75 17575.36 17576.44 . Please wait!  Running DEzs-MCMC, chain  1 iteration 97800 of 100002 . Current logp  17578.06 17573.49 17576.11 . Please wait!  Running DEzs-MCMC, chain  1 iteration 98100 of 100002 . Current logp  17576.49 17576.63 17573.11 . Please wait!  Running DEzs-MCMC, chain  1 iteration 98400 of 100002 . Current logp  17577.78 17578.38 17575.06 . Please wait!  Running DEzs-MCMC, chain  1 iteration 98700 of 100002 . Current logp  17574.51 17575.71 17577.61 . Please wait!  Running DEzs-MCMC, chain  1 iteration 99000 of 100002 . Current logp  17572.72 17577.8 17576.62 . Please wait!  Running DEzs-MCMC, chain  1 iteration 99300 of 100002 . Current logp  17578.14 17576.52 17577.26 . Please wait!  Running DEzs-MCMC, chain  1 iteration 99600 of 100002 . Current logp  17577.28 17577.58 17575.46 . Please wait!  Running DEzs-MCMC, chain  1 iteration 99900 of 100002 . Current logp  17575.03 17575.48 17575.96 . Please wait!  Running DEzs-MCMC, chain  1 iteration 100002 of 100002 . Current logp  17574.84 17577.57 17575.52 . Please wait! runMCMC terminated after 176.574seconds
-Error in system(paste(which, shQuote(names[i])), intern = TRUE, ignore.stderr = TRUE) : 
-  cannot popen '/usr/bin/which 'uname' 2>/dev/null', probable reason 'Cannot allocate memory'
-Calls: <Anonymous> -> applySettingsDefault -> <Anonymous> -> Sys.which
-Execution halted
-Warning message:
-system call failed: Cannot allocate memory 
